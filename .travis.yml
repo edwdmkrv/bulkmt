@@ -1,0 +1,33 @@
+language: cpp
+dist: xenial
+addons:
+  apt:
+    update: true
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-8
+      - libgtest-dev
+      - build-essential
+      - cmake
+before_install:
+- export CC=gcc-8
+- export CXX=g++-8
+before_script:
+- pushd /usr/src/gtest
+- sudo cmake .
+- sudo cmake --build . -- -j "`nproc`"
+- sudo cp *.a /usr/lib
+- popd
+script:
+- cmake -D BUILD_TYPE_RELEASE=ON .
+- cmake --build . -- -j "`nproc`"
+- cmake --build . --target test -- -j "`nproc`"
+- cmake --build . --target package -- -j "`nproc`"
+deploy:
+  - provider: script
+    skip_cleanup: true
+    debug: on
+    script: bash .deploy.sh "$TRAVIS_BUILD_NUMBER" "$BINTRAY_API_KEY"
+    on:
+      branch: master
